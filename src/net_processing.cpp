@@ -809,9 +809,9 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
         if (state.fPreferHeaderAndIDs && (!fWitnessEnabled || state.fWantsCmpctWitness) &&
                 !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev)) {
 
-            LogPrint("net", "%s sending header-and-ids %s to peer=%d\n", "PeerLogicValidation::NewPoWValidBlock",
+            LogPrint("net", "not %s sending header-and-ids %s to peer=%d\n", "PeerLogicValidation::NewPoWValidBlock",
                     hashBlock.ToString(), pnode->id);
-            connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock));
+            //connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock));
             state.pindexBestHeaderSent = pindex;
         }
     });
@@ -1543,13 +1543,13 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 return true;
 
             bool fAlreadyHave = AlreadyHave(inv);
-            LogPrint("net", "got inv: %s  %s peer=%d\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id);
 
             if (inv.type == MSG_TX) {
                 inv.type |= nFetchFlags;
             }
 
             if (inv.type == MSG_BLOCK) {
+                LogPrint("net", "CUSTOM: got inventory bhash=%s  %s peer=%d with ipaddr=%s\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id, pfrom->addr->ToStringIPPort());
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
                 if (!fAlreadyHave && !fImporting && !fReindex && !mapBlocksInFlight.count(inv.hash)) {
                     // We used to request the full block here, but since headers-announcements are now the
@@ -1959,6 +1959,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         CBlockHeaderAndShortTxIDs cmpctblock;
         vRecv >> cmpctblock;
 
+        LogPrint("net", "CUSTOM: got compact block message from peer=%d with ipaddr=%s with bhash=%s and prevhash=%s and timestamp=%u\n",
+            pfrom->GetId(), pfrom->addr->ToStringIPPort(), cmpctblock.header.GetHash().ToString(),
+            cmpctblock.header.hashPrevBlock.ToString(), cmpctblock.header.nTime);
+
         {
         LOCK(cs_main);
 
@@ -2232,6 +2236,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         headers.resize(nCount);
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
+            LogPrint("net", "CUSTOM: got header from peer=%d with ipaddr=%s with bhash=%s and prevhash=%s and timestamp=%u\n", pfrom->GetId(),
+                pfrom->addr->ToStringIPPort(),headers[n].GetHash().ToString(), headers[n].hashPrevBlock.ToString(), headers[n].nTime);
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
@@ -2536,7 +2542,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 // Relay
                 pfrom->setKnown.insert(alertHash);
                 {
-                    
+
                     connman.ForEachNode([&alert](CNode* pnode)
                     {
                         pnode->PushAlert(alert);
@@ -3003,11 +3009,14 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     {
                         LOCK(cs_most_recent_block);
                         if (most_recent_block_hash == pBestIndex->GetBlockHash()) {
-                            if (state.fWantsCmpctWitness)
-                                connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, *most_recent_compact_block));
+                            if (state.fWantsCmpctWitness) {
+                                LogPrint("net", "not sending cmpctblock");
+                                //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, *most_recent_compact_block));
+                            }
                             else {
                                 CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, state.fWantsCmpctWitness);
-                                connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
+                                LogPrint("net", "not sending cmpctblock");
+                                //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
                             }
                             fGotBlockFromCache = true;
                         }
@@ -3017,7 +3026,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         bool ret = ReadBlockFromDisk(block, pBestIndex, consensusParams, false);
                         assert(ret);
                         CBlockHeaderAndShortTxIDs cmpctblock(block, state.fWantsCmpctWitness);
-                        connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
+                        LogPrint("net", "not sending cmpctblock");
+                        //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
                     }
                     state.pindexBestHeaderSent = pBestIndex;
                 } else if (state.fPreferHeaders) {
@@ -3030,7 +3040,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         LogPrint("net", "%s: sending header %s to peer=%d\n", __func__,
                                 vHeaders.front().GetHash().ToString(), pto->id);
                     }
-                    connman.PushMessage(pto, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
+                    LogPrint("net", "not sending headers");
+                    //connman.PushMessage(pto, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
                     state.pindexBestHeaderSent = pBestIndex;
                 } else
                     fRevertToInv = true;
@@ -3076,7 +3087,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             BOOST_FOREACH(const uint256& hash, pto->vInventoryBlockToSend) {
                 vInv.push_back(CInv(MSG_BLOCK, hash));
                 if (vInv.size() == MAX_INV_SZ) {
-                    connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
+                    LogPrint("net", "not sending inventory");
+                    //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                     vInv.clear();
                 }
             }
@@ -3122,7 +3134,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     pto->filterInventoryKnown.insert(hash);
                     vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
-                        connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
+                        LogPrint("net", "not sending inventory");
+                        //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
                     }
                 }
@@ -3188,15 +3201,18 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         }
                     }
                     if (vInv.size() == MAX_INV_SZ) {
-                        connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
+                        LogPrint("net", "not sending inventory");
+                        //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
                     }
                     pto->filterInventoryKnown.insert(hash);
                 }
             }
         }
-        if (!vInv.empty())
-            connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
+        if (!vInv.empty()) {
+            LogPrint("net", "not sending inventory");
+            //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
+        }
 
         // Detect whether we're stalling
         nNow = GetTimeMicros();
