@@ -1549,7 +1549,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             }
 
             if (inv.type == MSG_BLOCK) {
-                LogPrint("net", "CUSTOM: got inventory bhash=%s  %s peer=%d with ipaddr=%s\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id, pfrom->addr->ToStringIPPort());
+                LogPrint("net", "CUSTOM: got inventory bhash=%s  %s peer=%d with ipaddr=%s\n", inv.ToString(), fAlreadyHave ? "have" : "new", pfrom->id, pfrom->addr.ToStringIPPort());
                 UpdateBlockAvailability(pfrom->GetId(), inv.hash);
                 if (!fAlreadyHave && !fImporting && !fReindex && !mapBlocksInFlight.count(inv.hash)) {
                     // We used to request the full block here, but since headers-announcements are now the
@@ -1960,7 +1960,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         vRecv >> cmpctblock;
 
         LogPrint("net", "CUSTOM: got compact block message from peer=%d with ipaddr=%s with bhash=%s and prevhash=%s and timestamp=%u\n",
-            pfrom->GetId(), pfrom->addr->ToStringIPPort(), cmpctblock.header.GetHash().ToString(),
+            pfrom->GetId(), pfrom->addr.ToStringIPPort(), cmpctblock.header.GetHash().ToString(),
             cmpctblock.header.hashPrevBlock.ToString(), cmpctblock.header.nTime);
 
         {
@@ -2237,7 +2237,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         for (unsigned int n = 0; n < nCount; n++) {
             vRecv >> headers[n];
             LogPrint("net", "CUSTOM: got header from peer=%d with ipaddr=%s with bhash=%s and prevhash=%s and timestamp=%u\n", pfrom->GetId(),
-                pfrom->addr->ToStringIPPort(),headers[n].GetHash().ToString(), headers[n].hashPrevBlock.ToString(), headers[n].nTime);
+                pfrom->addr.ToStringIPPort(),headers[n].GetHash().ToString(), headers[n].hashPrevBlock.ToString(), headers[n].nTime);
             ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
         }
 
