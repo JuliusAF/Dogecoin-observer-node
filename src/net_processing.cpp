@@ -3010,12 +3010,12 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         LOCK(cs_most_recent_block);
                         if (most_recent_block_hash == pBestIndex->GetBlockHash()) {
                             if (state.fWantsCmpctWitness) {
-                                LogPrint("net", "not sending cmpctblock");
+                                LogPrint("net", "not sending cmpctblock\n");
                                 //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, *most_recent_compact_block));
                             }
                             else {
                                 CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, state.fWantsCmpctWitness);
-                                LogPrint("net", "not sending cmpctblock");
+                                LogPrint("net", "not sending cmpctblock\n");
                                 //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
                             }
                             fGotBlockFromCache = true;
@@ -3026,7 +3026,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         bool ret = ReadBlockFromDisk(block, pBestIndex, consensusParams, false);
                         assert(ret);
                         CBlockHeaderAndShortTxIDs cmpctblock(block, state.fWantsCmpctWitness);
-                        LogPrint("net", "not sending cmpctblock");
+                        LogPrint("net", "not sending cmpctblock\n");
                         //connman.PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
                     }
                     state.pindexBestHeaderSent = pBestIndex;
@@ -3040,7 +3040,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         LogPrint("net", "%s: sending header %s to peer=%d\n", __func__,
                                 vHeaders.front().GetHash().ToString(), pto->id);
                     }
-                    LogPrint("net", "not sending headers");
+                    LogPrint("net", "not sending headers\n");
                     //connman.PushMessage(pto, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
                     state.pindexBestHeaderSent = pBestIndex;
                 } else
@@ -3087,7 +3087,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             BOOST_FOREACH(const uint256& hash, pto->vInventoryBlockToSend) {
                 vInv.push_back(CInv(MSG_BLOCK, hash));
                 if (vInv.size() == MAX_INV_SZ) {
-                    LogPrint("net", "not sending inventory");
+                    LogPrint("net", "not sending inventory\n");
                     //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                     vInv.clear();
                 }
@@ -3134,7 +3134,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     pto->filterInventoryKnown.insert(hash);
                     vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
-                        LogPrint("net", "not sending inventory");
+                        LogPrint("net", "not sending inventory\n");
                         //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
                     }
@@ -3201,7 +3201,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         }
                     }
                     if (vInv.size() == MAX_INV_SZ) {
-                        LogPrint("net", "not sending inventory");
+                        LogPrint("net", "not sending inventory\n");
                         //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
                     }
@@ -3210,7 +3210,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             }
         }
         if (!vInv.empty()) {
-            LogPrint("net", "not sending inventory");
+            LogPrint("net", "not sending inventory\n");
             //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
         }
 
