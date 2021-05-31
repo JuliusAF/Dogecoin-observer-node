@@ -906,6 +906,8 @@ bool AppInitParameterInteraction()
     if (nMaxConnections < nUserMaxConnections)
         InitWarning(strprintf(_("Reducing -maxconnections from %d to %d, because of system limitations."), nUserMaxConnections, nMaxConnections));
 
+    InitWarning(strprintf(_("Definitely updated.")));
+
     // ********************************************************* Step 3: parameter-to-internal-flags
 
     fDebug = mapMultiArgs.count("-debug");
@@ -1057,7 +1059,7 @@ bool AppInitParameterInteraction()
     // Option to startup with mocktime set (used for regression testing):
     SetMockTime(GetArg("-mocktime", 0)); // SetMockTime(0) is a no-op
 
-    /* disable bloom 
+    /* disable bloom
     if (GetBoolArg("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
         nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
     */
