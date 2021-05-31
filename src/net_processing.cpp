@@ -419,13 +419,13 @@ void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connman) {
                 // As per BIP152, we only get 3 of our peers to announce
                 // blocks using compact encodings.
                 connman.ForNode(lNodesAnnouncingHeaderAndIDs.front(), [&connman, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion](CNode* pnodeStop){
-                    connman.PushMessage(pnodeStop, CNetMsgMaker(pnodeStop->GetSendVersion()).Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
+                    //connman.PushMessage(pnodeStop, CNetMsgMaker(pnodeStop->GetSendVersion()).Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
                     return true;
                 });
                 lNodesAnnouncingHeaderAndIDs.pop_front();
             }
             fAnnounceUsingCMPCTBLOCK = true;
-            connman.PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
+            //connman.PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
             lNodesAnnouncingHeaderAndIDs.push_back(pfrom->GetId());
             return true;
         });
@@ -838,7 +838,7 @@ void PeerLogicValidation::UpdatedBlockTip(const CBlockIndex *pindexNew, const CB
         connman->ForEachNode([nNewHeight, &vHashes](CNode* pnode) {
             if (nNewHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : 0)) {
                 BOOST_REVERSE_FOREACH(const uint256& hash, vHashes) {
-                    pnode->PushBlockHash(hash);
+                    //pnode->PushBlockHash(hash);
                 }
             }
         });
@@ -1738,7 +1738,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         // will re-announce the new block via headers (or compact blocks again)
         // in the SendMessages logic.
         nodestate->pindexBestHeaderSent = pindex ? pindex : chainActive.Tip();
-        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
+        //connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::HEADERS, vHeaders));
     }
 
 
@@ -3055,7 +3055,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
 
             // Add blocks
             BOOST_FOREACH(const uint256& hash, pto->vInventoryBlockToSend) {
-                vInv.push_back(CInv(MSG_BLOCK, hash));
+                //vInv.push_back(CInv(MSG_BLOCK, hash));
                 if (vInv.size() == MAX_INV_SZ) {
                     //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                     vInv.clear();
@@ -3101,7 +3101,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                         if (!pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     }
                     pto->filterInventoryKnown.insert(hash);
-                    vInv.push_back(inv);
+                    //vInv.push_back(inv);
                     if (vInv.size() == MAX_INV_SZ) {
                         //connman.PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
                         vInv.clear();
@@ -3116,7 +3116,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                 std::vector<std::set<uint256>::iterator> vInvTx;
                 vInvTx.reserve(pto->setInventoryTxToSend.size());
                 for (std::set<uint256>::iterator it = pto->setInventoryTxToSend.begin(); it != pto->setInventoryTxToSend.end(); it++) {
-                    vInvTx.push_back(it);
+                    //vInvTx.push_back(it);
+                    ;
                 }
                 CAmount filterrate = 0;
                 {
@@ -3153,7 +3154,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
                     }
                     if (pto->pfilter && !pto->pfilter->IsRelevantAndUpdate(*txinfo.tx)) continue;
                     // Send
-                    vInv.push_back(CInv(MSG_TX, hash));
+                    //vInv.push_back(CInv(MSG_TX, hash));
                     nRelayedTransactions++;
                     {
                         // Expire old relay messages
